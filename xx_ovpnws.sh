@@ -331,37 +331,44 @@ log /etc/openvpn/server/udpserver.log
 status /etc/openvpn/server/udpclient.log
 verb 3' > /etc/openvpn/server.conf
 
-echo 'mode server
-tls-server 
-port 1194
-proto tcp 
+echo '# Openvpn Configuration by Firenet Philippines :)
 dev tun
-keepalive 1 180
-resolv-retry infinite 
+port 1194
+proto tcp
+topology subnet
 server 10.20.0.0 255.255.252.0
 ca /etc/openvpn/easy-rsa/keys/ca.crt 
 cert /etc/openvpn/easy-rsa/keys/server.crt 
 key /etc/openvpn/easy-rsa/keys/server.key 
-client-cert-not-required 
-username-as-common-name 
-auth-user-pass-verify "/etc/openvpn/login/auth_vpn" via-file # 
-tmp-dir "/etc/openvpn/" # 
-push "redirect-gateway def1" 
-push "dhcp-option DNS 8.8.8.8"
-push "dhcp-option DNS 8.8.4.4"
-push "sndbuf 393216"
-push "rcvbuf 393216"
-tun-mtu 1400 
-mssfix 1360
-verb 3
-script-security 2
+dh none
 cipher AES-128-CBC
-tcp-nodelay
+ncp-disable
+auth none
+sndbuf 0
+rcvbuf 0
+keepalive 10 120
+persist-key
+persist-tun
+ping-timer-rem
+reneg-sec 0
+user nobody
+group nogroup
+client-to-client
+username-as-common-name
+verify-client-cert none
+client-cert-not-required
+script-security 3
 max-clients 1024
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
 ifconfig-pool-persist /etc/openvpn/server/ip_tcp.txt
 auth-user-pass-verify "/etc/openvpn/login/auth_vpn" via-env # 
+push "persist-key"
+push "persist-tun"
+push "dhcp-option DNS 8.8.8.8"
+push "redirect-gateway def1 bypass-dhcp"
+push "sndbuf 0"
+push "rcvbuf 0"
 log /etc/openvpn/server/tcpserver.log
 status /etc/openvpn/server/tcpclient.log
 verb 3' > /etc/openvpn/server2.conf
