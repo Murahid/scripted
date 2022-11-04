@@ -12,21 +12,31 @@ mkdir -p /var/www/html/stat
 touch /etc/openvpn/server.conf
 touch /etc/openvpn/server2.conf
 
+ useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
+    sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+    echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
+    service sshd restart
+    
+cat <<\EOM >/etc/openvpn/login/config.sh
+#!/bin/bash
+HOST='64.20.48.226'
+USER='mbtunnel_gbtunnel'
+PASS='JAN022011b'
+DB='mbtunnel_gbtunnel'
+EOM
+
 
 /bin/cat <<"EOM" >/etc/openvpn/login/auth_vpn
 #!/bin/bash
 username=`head -n1 $1 | tail -1`   
 password=`head -n2 $1 | tail -1`
-
 HOST='64.20.48.226'
 USER='mbtunnel_gbtunnel'
 PASS='JAN022011b'
 DB='mbtunnel_gbtunnel'
-
-Query="SELECT user_name FROM users WHERE user_name='$username' AND auth_vpn=md5('$password') AND status='live' AND is_freeze=0 AND is_ban=0 AND (duration > 0 OR vip_duration > 0 OR private_duration > 0)"
+Query="SELECT user_name FROM users WHERE user_name='$username' AND user_encryptedPass=md5('$password') AND is_freeze='0' AND user_duration > 0"
 user_name=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
 [ "$user_name" != '' ] && [ "$user_name" = "$username" ] && echo "user : $username" && echo 'authentication ok.' && exit 0 || echo 'authentication failed.'; exit 1
-
 EOM
 
 
@@ -180,7 +190,6 @@ Certificate:
                 keyid:02:F1:A1:1F:F4:E2:B3:E6:11:08:62:90:2D:42:9A:31:C0:84:86:C8
                 DirName:/C=US/ST=PH/L=Maynila/O=Tondo/OU=PinoyGround/CN=Tondo CA/name=server/emailAddress=pinoyground@gmail.com
                 serial:AC:AF:92:C7:FF:40:27:30
-
             X509v3 Extended Key Usage: 
                 TLS Web Server Authentication
             X509v3 Key Usage: 
@@ -277,6 +286,26 @@ FXQ/AVkvxYaO8pFI2Vh+CNMk7Vvi8d3DTayvoL2HTgFi+OIEbiiE/Nzryu+jDGc7
 -----END DH PARAMETERS-----
 EOF
 
+#client-connect file
+cat <<'LENZ05' >/etc/openvpn/login/connect.sh
+#!/bin/bash
+. /etc/openvpn/login/config.sh
+##set status online to user connected
+server_ip=$(curl -s https://api.ipify.org)
+datenow=`date +"%Y-%m-%d %T"`
+mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='1', device_connected='1', active_address='$server_ip', active_date='$datenow' WHERE user_name='$common_name' "
+LENZ05
+
+#TCP client-disconnect file
+cat <<'LENZ06' >/etc/openvpn/login/disconnect.sh
+#!/bin/bash
+. /etc/openvpn/login/config.sh
+mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='0', active_address='', active_date='' WHERE user_name='$common_name' "
+LENZ06
+
+
+
+
 chmod +x /etc/openvpn/login/auth_vpn
 chmod 755 /etc/openvpn/server.conf
 chmod 755 /etc/openvpn/server2.conf
@@ -284,6 +313,9 @@ chmod 755 /etc/openvpn/login/auth_vpn
 touch /var/www/html/stat/udpstatus.txt
 touch /var/www/html/stat/tcpstatus.txt
 chmod 755 /var/www/html/stat/*
+
+
+
 
 echo 'fs.file-max = 51200
 net.core.rmem_max = 67108864
@@ -434,8 +466,6 @@ socket = a:SO_REUSEADDR=1
 socket = l:TCP_NODELAY=1
 socket = r:TCP_NODELAY=1
 client = no
-
-
 [openvpn]
 accept = 443
 connect = 127.0.0.1:1194'| sudo tee /etc/stunnel/stunnel.conf
@@ -446,20 +476,15 @@ cat << \socksopenvpn > /usr/local/sbin/proxy.py
 # encoding: utf-8
 # SocksProxy By: Ykcir Ogotip Caayon
 import socket, threading, thread, select, signal, sys, time, getopt
-
 # CONFIG
 LISTENING_ADDR = '0.0.0.0'
 LISTENING_PORT = 80
-
 PASS = ''
-
 # CONST
 BUFLEN = 4096 * 4
 TIMEOUT = 60
 DEFAULT_HOST = '127.0.0.1:1194'
 RESPONSE = 'HTTP/1.1 101 Switching Protocols \r\n\r\n'
-
-
 class Server(threading.Thread):
     def __init__(self, host, port):
         threading.Thread.__init__(self)
@@ -469,7 +494,6 @@ class Server(threading.Thread):
         self.threads = []
         self.threadsLock = threading.Lock()
         self.logLock = threading.Lock()
-
     def run(self):
         self.soc = socket.socket(socket.AF_INET)
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -477,7 +501,6 @@ class Server(threading.Thread):
         self.soc.bind((self.host, self.port))
         self.soc.listen(0)
         self.running = True
-
         try:
             while self.running:
                 try:
@@ -485,19 +508,16 @@ class Server(threading.Thread):
                     c.setblocking(1)
                 except socket.timeout:
                     continue
-
                 conn = ConnectionHandler(c, self, addr)
                 conn.start()
                 self.addConn(conn)
         finally:
             self.running = False
             self.soc.close()
-
     def printLog(self, log):
         self.logLock.acquire()
         print log
         self.logLock.release()
-
     def addConn(self, conn):
         try:
             self.threadsLock.acquire()
@@ -505,26 +525,21 @@ class Server(threading.Thread):
                 self.threads.append(conn)
         finally:
             self.threadsLock.release()
-
     def removeConn(self, conn):
         try:
             self.threadsLock.acquire()
             self.threads.remove(conn)
         finally:
             self.threadsLock.release()
-
     def close(self):
         try:
             self.running = False
             self.threadsLock.acquire()
-
             threads = list(self.threads)
             for c in threads:
                 c.close()
         finally:
             self.threadsLock.release()
-
-
 class ConnectionHandler(threading.Thread):
     def __init__(self, socClient, server, addr):
         threading.Thread.__init__(self)
@@ -534,7 +549,6 @@ class ConnectionHandler(threading.Thread):
         self.client_buffer = ''
         self.server = server
         self.log = 'Connection: ' + str(addr)
-
     def close(self):
         try:
             if not self.clientClosed:
@@ -544,7 +558,6 @@ class ConnectionHandler(threading.Thread):
             pass
         finally:
             self.clientClosed = True
-
         try:
             if not self.targetClosed:
                 self.target.shutdown(socket.SHUT_RDWR)
@@ -553,21 +566,15 @@ class ConnectionHandler(threading.Thread):
             pass
         finally:
             self.targetClosed = True
-
     def run(self):
         try:
             self.client_buffer = self.client.recv(BUFLEN)
-
             hostPort = self.findHeader(self.client_buffer, 'X-Real-Host')
-
             if hostPort == '':
                 hostPort = DEFAULT_HOST
-
             split = self.findHeader(self.client_buffer, 'X-Split')
-
             if split != '':
                 self.client.recv(BUFLEN)
-
             if hostPort != '':
                 passwd = self.findHeader(self.client_buffer, 'X-Pass')
 				
@@ -582,7 +589,6 @@ class ConnectionHandler(threading.Thread):
             else:
                 print '- No X-Real-Host!'
                 self.client.send('HTTP/1.1 400 NoXRealHost!\r\n\r\n')
-
         except Exception as e:
             self.log += ' - error: ' + e.strerror
             self.server.printLog(self.log)
@@ -590,22 +596,16 @@ class ConnectionHandler(threading.Thread):
         finally:
             self.close()
             self.server.removeConn(self)
-
     def findHeader(self, head, header):
         aux = head.find(header + ': ')
-
         if aux == -1:
             return ''
-
         aux = head.find(':', aux)
         head = head[aux+2:]
         aux = head.find('\r\n')
-
         if aux == -1:
             return ''
-
         return head[:aux];
-
     def connect_target(self, host):
         i = host.find(':')
         if i != -1:
@@ -619,23 +619,17 @@ class ConnectionHandler(threading.Thread):
                 port = 8080
                 port = 8799
                 port = 3128
-
         (soc_family, soc_type, proto, _, address) = socket.getaddrinfo(host, port)[0]
-
         self.target = socket.socket(soc_family, soc_type, proto)
         self.targetClosed = False
         self.target.connect(address)
-
     def method_CONNECT(self, path):
         self.log += ' - CONNECT ' + path
-
         self.connect_target(path)
         self.client.sendall(RESPONSE)
         self.client_buffer = ''
-
         self.server.printLog(self.log)
         self.doCONNECT()
-
     def doCONNECT(self):
         socs = [self.client, self.target]
         count = 0
@@ -656,7 +650,6 @@ class ConnectionHandler(threading.Thread):
                                 while data:
                                     byte = self.target.send(data)
                                     data = data[byte:]
-
                             count = 0
 			else:
 			    break
@@ -665,20 +658,15 @@ class ConnectionHandler(threading.Thread):
                         break
             if count == TIMEOUT:
                 error = True
-
             if error:
                 break
-
-
 def print_usage():
     print 'Usage: proxy.py -p <port>'
     print '       proxy.py -b <bindAddr> -p <port>'
     print '       proxy.py -b 0.0.0.0 -p 80'
-
 def parse_args(argv):
     global LISTENING_ADDR
     global LISTENING_PORT
-
     try:
         opts, args = getopt.getopt(argv,"hb:p:",["bind=","port="])
     except getopt.GetoptError:
@@ -692,18 +680,13 @@ def parse_args(argv):
             LISTENING_ADDR = arg
         elif opt in ("-p", "--port"):
             LISTENING_PORT = int(arg)
-
-
 def main(host=LISTENING_ADDR, port=LISTENING_PORT):
-
     print "\n:-------PythonProxy-------:\n"
     print "Listening addr: " + LISTENING_ADDR
     print "Listening port: " + str(LISTENING_PORT) + "\n"
     print ":-------------------------:\n"
-
     server = Server(LISTENING_ADDR, LISTENING_PORT)
     server.start()
-
     while True:
         try:
             time.sleep(2)
@@ -711,11 +694,9 @@ def main(host=LISTENING_ADDR, port=LISTENING_PORT):
             print 'Stopping...'
             server.close()
             break
-
 if __name__ == '__main__':
     parse_args(sys.argv[1:])
     main()
-
 socksopenvpn
 
 
@@ -727,7 +708,6 @@ else
     echo "Starting Port 80"
     screen -dmS proxy2 python /usr/local/sbin/proxy.py 80
 fi
-
 if nc -z localhost 443; then
     echo "SocksProxy running"
 else
@@ -820,7 +800,6 @@ EOM
         -webkit-text-fill-color: transparent;
         -webkit-animation: hue 5s infinite linear;
     }
-
     @-webkit-keyframes hue {
       from {
         -webkit-filter: hue-rotate(0deg);
@@ -859,4 +838,4 @@ history -c
 cd /root || exit
 rm -f /root/installer.sh
 echo -e "\e[1;32m Installing Done \033[0m"
-netstat -lntp
+reboot
