@@ -2,7 +2,7 @@
 cp /usr/share/zoneinfo/Asia/Dubai /etc/localtime
 
 #Database Details
-db_host='webhosting2031.is.c';
+db_host='64.20.48.226';
 db_user='mbtunnel_gbtunnel';
 db_pass='JAN022011b';
 db_name='mbtunnel_gbtunnel';
