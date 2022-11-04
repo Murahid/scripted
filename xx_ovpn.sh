@@ -12,11 +12,13 @@ mkdir -p /var/www/html/stat
 touch /etc/openvpn/server.conf
 touch /etc/openvpn/server2.conf
 
+
+
  useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
     sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
     echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
     service sshd restart
-    
+
 cat <<\EOM >/etc/openvpn/login/config.sh
 #!/bin/bash
 HOST='64.20.48.226'
@@ -34,10 +36,28 @@ HOST='64.20.48.226'
 USER='mbtunnel_gbtunnel'
 PASS='JAN022011b'
 DB='mbtunnel_gbtunnel'
+
 Query="SELECT user_name FROM users WHERE user_name='$username' AND user_encryptedPass=md5('$password') AND is_freeze='0' AND user_duration > 0"
 user_name=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
 [ "$user_name" != '' ] && [ "$user_name" = "$username" ] && echo "user : $username" && echo 'authentication ok.' && exit 0 || echo 'authentication failed.'; exit 1
 EOM
+
+#client-connect file
+cat <<'LENZ05' >/etc/openvpn/login/connect.sh
+#!/bin/bash
+. /etc/openvpn/login/config.sh
+##set status online to user connected
+server_ip=$(curl -s https://api.ipify.org)
+datenow=`date +"%Y-%m-%d %T"`
+mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='1', device_connected='1', active_address='$server_ip', active_date='$datenow' WHERE user_name='$common_name' "
+LENZ05
+
+#TCP client-disconnect file
+cat <<'LENZ06' >/etc/openvpn/login/disconnect.sh
+#!/bin/bash
+. /etc/openvpn/login/config.sh
+mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='0', active_address='', active_date='' WHERE user_name='$common_name' "
+LENZ06
 
 
 
@@ -45,6 +65,7 @@ echo 'mode server
 tls-server 
 port 1194
 proto tcp 
+duplicate-cn
 dev tun
 keepalive 1 180
 resolv-retry infinite 
@@ -73,8 +94,8 @@ up /etc/openvpn/update-resolv-conf
 down /etc/openvpn/update-resolv-conf
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
-log server2_log
-status /var/www/html/stat/status.txt
+log server_log
+status /var/www/html/stat/tcpstatus.txt
 ifconfig-pool-persist /var/www/html/stat/ipp.txt' > /etc/openvpn/server.conf
 
 echo 'mode server 
@@ -82,6 +103,7 @@ tls-server
 port 53
 proto udp
 dev tun
+duplicate-cn
 keepalive 1 180
 resolv-retry infinite 
 max-clients 1000
@@ -105,10 +127,11 @@ verb 3
 cipher AES-128-CBC
 tcp-nodelay
 script-security 2
-client-connect /etc/openvpn/login/connect.sh
-client-disconnect /etc/openvpn/login/disconnect.sh
 up /etc/openvpn/update-resolv-conf                                                                                      
 down /etc/openvpn/update-resolv-conf
+client-connect /etc/openvpn/login/connect.sh
+client-disconnect /etc/openvpn/login/disconnect.sh
+log server_log
 status /var/www/html/stat/udpstatus.txt
 ifconfig-pool-persist /var/www/html/stat/udpipp.txt' > /etc/openvpn/server2.conf
 
@@ -286,26 +309,10 @@ FXQ/AVkvxYaO8pFI2Vh+CNMk7Vvi8d3DTayvoL2HTgFi+OIEbiiE/Nzryu+jDGc7
 -----END DH PARAMETERS-----
 EOF
 
-#client-connect file
-cat <<'LENZ05' >/etc/openvpn/login/connect.sh
-#!/bin/bash
-. /etc/openvpn/login/config.sh
-##set status online to user connected
-server_ip=$(curl -s https://api.ipify.org)
-datenow=`date +"%Y-%m-%d %T"`
-mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='1', device_connected='1', active_address='$server_ip', active_date='$datenow' WHERE user_name='$common_name' "
-LENZ05
-
-#TCP client-disconnect file
-cat <<'LENZ06' >/etc/openvpn/login/disconnect.sh
-#!/bin/bash
-. /etc/openvpn/login/config.sh
-mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='0', active_address='', active_date='' WHERE user_name='$common_name' "
-LENZ06
 
 
-
-
+chmod 755 /etc/openvpn/login/connect.sh
+chmod 755 /etc/openvpn/login/disconnect.sh
 chmod +x /etc/openvpn/login/auth_vpn
 chmod 755 /etc/openvpn/server.conf
 chmod 755 /etc/openvpn/server2.conf
@@ -313,6 +320,7 @@ chmod 755 /etc/openvpn/login/auth_vpn
 touch /var/www/html/stat/udpstatus.txt
 touch /var/www/html/stat/tcpstatus.txt
 chmod 755 /var/www/html/stat/*
+
 
 
 
