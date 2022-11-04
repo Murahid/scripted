@@ -1,10 +1,10 @@
 #!/bin/bash
 cp /usr/share/zoneinfo/Asia/Riyadh /etc/localtime
 #Database Details
-HOST='64.20.48.226';
-USER='mbtunnel_gbtunnel';
-PASS='JAN022011b';
-DBNAME='mbtunnel_gbtunnel';
+HOST='64.20.48.226'
+USER='mbtunnel_gbtunnel'
+PASS='JAN022011b'
+DBNAME='mbtunnel_gbtunnel'
 
 install_require()
 {
