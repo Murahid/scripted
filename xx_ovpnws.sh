@@ -296,11 +296,7 @@ topology subnet
 server 10.30.0.0 255.255.252.0
 ca /etc/openvpn/easy-rsa/keys/ca.crt 
 cert /etc/openvpn/easy-rsa/keys/server.crt 
-key /etc/openvpn/easy-rsa/keys/server.key 
-dh none
-cipher AES-128-CBC
-cipher none
-ncp-disable
+key /etc/openvpn/easy-rsa/keys/server.key
 auth none
 sndbuf 0
 rcvbuf 0
@@ -315,18 +311,21 @@ client-to-client
 username-as-common-name
 verify-client-cert none
 client-cert-not-required
-script-security 3
 max-clients 1024
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
 ifconfig-pool-persist /etc/openvpn/server/ip_udp.txt
 auth-user-pass-verify "/etc/openvpn/login/auth_vpn" via-env # 
-push "persist-key"
-push "persist-tun"
+push "redirect-gateway def1" 
 push "dhcp-option DNS 8.8.8.8"
-push "redirect-gateway def1 bypass-dhcp"
-push "sndbuf 0"
-push "rcvbuf 0"
+push "dhcp-option DNS 8.8.4.4"
+push "sndbuf 393216"
+push "rcvbuf 393216"
+tun-mtu 1400 
+mssfix 1360
+script-security 2
+cipher AES-128-CBC
+tcp-nodelay
 log /etc/openvpn/server/udpserver.log
 status /etc/openvpn/server/udpclient.log
 verb 3' > /etc/openvpn/server.conf
