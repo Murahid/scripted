@@ -298,9 +298,7 @@ ca /etc/openvpn/easy-rsa/keys/ca.crt
 cert /etc/openvpn/easy-rsa/keys/server.crt 
 key /etc/openvpn/easy-rsa/keys/server.key 
 dh none
-tls-server
-tls-version-min 1.2
-tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
+cipher AES-128-CBC
 cipher none
 ncp-disable
 auth none
@@ -333,7 +331,7 @@ log /etc/openvpn/server/udpserver.log
 status /etc/openvpn/server/udpclient.log
 verb 3' > /etc/openvpn/server.conf
 
-echo '# Openvpn Configuration by Firenet Philippines :)
+echo 'mode server
 tls-server 
 port 1194
 proto tcp 
@@ -756,7 +754,6 @@ install_done()
   rm /root/.installer
   echo "Server will secure this server and reboot after 20 seconds"
   sleep 20
-  reboot
 }
 
 install_require
