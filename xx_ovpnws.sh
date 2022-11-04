@@ -2,9 +2,9 @@
 cp /usr/share/zoneinfo/Asia/Riyadh /etc/localtime
 #Database Details
 HOST='webhosting2031.is.cc';
-USER='mbtunnel_gbtunnel';
+USER='mbtunnel_newpanel';
 PASS='JAN022011b';
-DBNAME='mbtunnel_gbtunnel';
+DBNAME='mbtunnel_newpanel';
 
 install_require()
 {
@@ -283,7 +283,8 @@ dh none
 tls-server
 tls-version-min 1.2
 tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
-cipher none
+cipher AES-128-CBC
+tcp-nodelay
 ncp-disable
 auth none
 sndbuf 0
@@ -315,7 +316,6 @@ log /etc/openvpn/server/udpserver.log
 status /etc/openvpn/server/udpclient.log
 verb 3' > /etc/openvpn/server.conf
 
-
 echo '# Openvpn Configuration by Firenet Philippines :)
 dev tun
 port 1194
@@ -326,6 +326,11 @@ ca /etc/openvpn/easy-rsa/keys/ca.crt
 cert /etc/openvpn/easy-rsa/keys/server.crt 
 key /etc/openvpn/easy-rsa/keys/server.key 
 dh none
+tls-server
+tls-version-min 1.2
+tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
+cipher AES-128-CBC
+tcp-nodelay
 ncp-disable
 auth none
 sndbuf 0
@@ -341,8 +346,7 @@ client-to-client
 username-as-common-name
 verify-client-cert none
 client-cert-not-required
-script-security 2
-cipher AES-128-CBC
+script-security 3
 max-clients 1024
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
@@ -354,36 +358,6 @@ push "dhcp-option DNS 8.8.8.8"
 push "redirect-gateway def1 bypass-dhcp"
 push "sndbuf 0"
 push "rcvbuf 0"
-log /etc/openvpn/server/tcpserver.log
-status /etc/openvpn/server/tcpclient.log
-verb 3' > /etc/openvpn/server2.conf
-
-
-echo '# Openvpn Configuration by Firenet Philippines :)
-dev tun
-port 1194
-proto tcp
-server 10.20.0.0 255.255.252.0
-ca /etc/openvpn/easy-rsa/keys/ca.crt 
-cert /etc/openvpn/easy-rsa/keys/server.crt 
-key /etc/openvpn/easy-rsa/keys/server.key dev tun
-keepalive 1 180
-resolv-retry infinite 
-max-clients 1024
-client-connect /etc/openvpn/login/connect.sh
-client-disconnect /etc/openvpn/login/disconnect.sh
-ifconfig-pool-persist /etc/openvpn/server/ip_tcp.txt
-auth-user-pass-verify "/etc/openvpn/login/auth_vpn" via-env # 
-push "redirect-gateway def1" 
-push "dhcp-option DNS 8.8.8.8"
-push "dhcp-option DNS 8.8.4.4"
-push "sndbuf 393216"
-push "rcvbuf 393216"
-tun-mtu 1400 
-mssfix 1360
-script-security 2
-cipher AES-128-CBC
-tcp-nodelay
 log /etc/openvpn/server/tcpserver.log
 status /etc/openvpn/server/tcpclient.log
 verb 3' > /etc/openvpn/server2.conf
@@ -425,6 +399,7 @@ cat <<'LENZ06' >/etc/openvpn/login/disconnect.sh
 . /etc/openvpn/login/config.sh
 mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_active='0', active_address='', active_date='' WHERE user_name='$common_name' "
 LENZ06
+
 
 cat << EOF > /etc/openvpn/easy-rsa/keys/ca.crt
 -----BEGIN CERTIFICATE-----
@@ -600,6 +575,7 @@ FXQ/AVkvxYaO8pFI2Vh+CNMk7Vvi8d3DTayvoL2HTgFi+OIEbiiE/Nzryu+jDGc7
 -----END DH PARAMETERS-----
 EOF
 
+
 chmod 755 /etc/openvpn/server.conf
 chmod 755 /etc/openvpn/server2.conf
 chmod 755 /etc/openvpn/login/connect.sh
@@ -686,7 +662,7 @@ sudo service stunnel4 restart
 
 install_sudo(){
   {
-     useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
+    useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
     sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
     echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
     service sshd restart
@@ -752,7 +728,6 @@ exit 0" >> /etc/rc.local
   }&>/dev/null
 }
 
-
 install_done()
 {
   clear
@@ -760,18 +735,15 @@ install_done()
   echo "IP : $(curl -s https://api.ipify.org)"
   echo "OPENVPN TCP port : 1194"
   echo "OPENVPN UDP port : 53"
-  echo "OPENVPN SSL port : 443"
-  echo "SSH WS port : 22"
+  echo "OPENVPN SSL port : 442"
+  echo "OPENVPN WS port : 80"
   echo "SOCKS port : 80"
   echo "PROXY port : 3128"
   echo "PROXY port : 8080"
-  echo "DROPBEAR : 22"
   echo
   echo
   history -c;
   rm /root/.installer
-  echo "Server will secure this server and reboot after 20 seconds"
-  sleep 20
 }
 
 install_require
