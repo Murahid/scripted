@@ -12,10 +12,7 @@ mkdir -p /var/www/html/stat
 touch /etc/openvpn/server.conf
 touch /etc/openvpn/server2.conf
 
- useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
- sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
- echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
- service sshd restart
+
 
 
 cat <<\EOM >/etc/openvpn/login/config.sh
@@ -840,4 +837,4 @@ history -c
 cd /root || exit
 rm -f /root/installer.sh
 echo -e "\e[1;32m Installing Done \033[0m"
-reboot
+netstat -lntp
