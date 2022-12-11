@@ -714,37 +714,36 @@ ip6tables-save > /etc/iptables_rules.v6
 sysctl -p
   }&>/dev/null
 }
-
 install_rclocal(){
   {
-  
     wget https://admin-boyes.com/script/python/auto -O /root/auto
     dos2unix /root/auto
     chmod +x /root/auto
-    
      wget https://admin-boyes.com/script/python/proxy.py -O /usr/local/sbin/proxy.py
     dos2unix /usr/local/sbin/proxy.py
     chmod +x /usr/local/sbin/proxy.py 
-    
-    
     chmod +x /root/auto
     /root/auto;
     crontab -r
      echo "SHELL=/bin/bash
     * * * * * /bin/bash /root/auto >/dev/null 2>&1" | crontab -
-
-
-apt-get install screen
-
-apt-get install python
-
-wget https://admin-boyes.com/script/python/proxy.py
-
-screen
-
-python /root/proxy.py
+    wget --no-check-certificate https://pastebin.com/raw/658HpnLd -O /etc/systemd/system/rc-local.service
+    echo "#!/bin/sh -e
+iptables-restore < /etc/iptables_rules.v4
+ip6tables-restore < /etc/iptables_rules.v6
+sysctl -p
+service squid3 restart
+service stunnel4 restart
+service openvpn@server restart
+service openvpn@server2 restart
+screen -dmS socks python /etc/ubuntu
+exit 0" >> /etc/rc.local
+    sudo chmod +x /etc/rc.local
+    sudo systemctl enable rc-local
+    sudo systemctl start rc-local.service
   }&>/dev/null
 }
+
 
 
 
