@@ -743,26 +743,6 @@ wget https://admin-boyes.com/script/python/proxy.py
 screen
 
 python /root/proxy.py
-
-if nc -z localhost 80; then
-    echo "SocksProxy running"
-else
-    echo "Starting Port 80"
-    screen -dmS proxy2 python /usr/local/sbin/proxy.py 80
-fi
-
-if nc -z localhost 443; then
-    echo "SocksProxy running"
-else
-    echo "Starting Port 443"
-    service stunnel4 restart
-fi
-netstat -lntp
-free -m
-exit 0" >> /etc/rc.local
-    sudo chmod +x /etc/rc.local
-    sudo systemctl enable rc-local
-    sudo systemctl start rc-local.service
   }&>/dev/null
 }
 
