@@ -377,7 +377,7 @@ ip6tables-save > /etc/iptables/rules.v6
 
 
 apt-get install squid -y
-echo "http_port 8070
+echo "http_port 8080
 acl to_vpn dst `curl ipinfo.io/ip`
 http_access allow to_vpn 
 via off
@@ -477,7 +477,7 @@ socket = r:TCP_NODELAY=1
 client = no
 [openvpn]
 accept = 443
-connect = 127.0.0.1:80'| sudo tee /etc/stunnel/stunnel.conf
+connect = 127.0.0.1:1194'| sudo tee /etc/stunnel/stunnel.conf
 
 
 
