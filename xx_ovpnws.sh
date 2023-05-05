@@ -934,6 +934,15 @@ service openvpn restart
  /usr/sbin/useradd -p $(openssl passwd -1 12345) -M bulala
 systemctl start hysteria-server.service
 systemctl enable hysteria-server.service
+echo "Installing iptables."
+echo "net.ipv4.ip_forward=1
+net.ipv4.conf.all.rp_filter=0
+net.ipv4.conf.eth0.rp_filter=0" >> /etc/sysctl.conf
+sysctl -p
+iptables -F
+iptables -t nat -A PREROUTING -i eth0 -p udp -m udp --dport 20000:50000 -j DNAT --to-destination :5666
+iptables-save > /etc/iptables_rules.v4
+ip6tables-save > /etc/iptables_rules.v6
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
 update-rc.d squid enable
  /usr/sbin/useradd -p $(openssl passwd -1 boy12) -M boy12
