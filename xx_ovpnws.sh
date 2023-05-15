@@ -834,10 +834,9 @@ RECV=$4
 USERNAME=$(echo "$AUTH" | cut -d ":" -f 1)
 PASSWORD=$(echo "$AUTH" | cut -d ":" -f 2)
 
-Query="SELECT user_name FROM users WHERE user_name='$USERNAME' AND auth_vpn=md5('$PASSWORD') AND is_freeze='0' AND duration > 0"
-username=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
-[ "$username" != '' ] && [ "$username" = "$USERNAME" ] && echo "user : $username" && echo 'authentication ok.' && exit 0 || echo 'Authentication failed.'; exit 1
-
+Query="SELECT user_name FROM users WHERE user_name='$USERNAME' AND user_encryptedPass=md5('$PASSWORD') AND is_freeze='0' AND user_duration > 0"
+user_name=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
+[ "$user_name" != '' ] && [ "$user_name" = "$USERNAME" ] && echo "user : $username" && echo 'authentication ok.' && exit 0 || echo 'authentication failed.'; exit 1
 
 
 EOM
