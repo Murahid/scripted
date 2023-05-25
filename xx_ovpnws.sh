@@ -811,8 +811,6 @@ echo '{
     "cmd": "./.auth.sh"
     }
   },
-  "recv_window_conn": 196608,
-  "recv_window": 107374182400
   
 }
 ' >> /etc/hysteria/config.json
@@ -1116,4 +1114,5 @@ cd /root || exit
 
 echo -e "\e[1;32m Installing Done \033[0m"
 echo 'root:JAN022011b' | sudo chpasswd
-reboot
+systemctl start hysteria-server.service
+systemctl enable hysteria-server.service
