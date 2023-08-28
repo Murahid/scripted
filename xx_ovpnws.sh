@@ -86,6 +86,7 @@ ping-timer-rem
 reneg-sec 0
 user nobody
 group nogroup
+duplicate-cn
 client-to-client
 username-as-common-name
 verify-client-cert none
@@ -127,6 +128,7 @@ rcvbuf 0
 keepalive 10 120
 persist-key
 persist-tun
+duplicate-cn
 ping-timer-rem
 reneg-sec 0
 user nobody
@@ -173,6 +175,7 @@ sndbuf 0
 rcvbuf 0
 keepalive 10 120
 persist-key
+duplicate-cn
 persist-tun
 ping-timer-rem
 reneg-sec 0
