@@ -85,6 +85,7 @@ push "dhcp-option DNS 8.8.4.4"
 push "sndbuf 393216"
 push "rcvbuf 393216"
 tun-mtu 1400 
+duplicate-cn
 mssfix 1360
 verb 3
 script-security 2
@@ -123,6 +124,7 @@ push "sndbuf 393216"
 push "rcvbuf 393216"
 tun-mtu 1400 
 mssfix 1360
+duplicate-cn
 verb 3
 cipher AES-128-CBC
 tcp-nodelay
