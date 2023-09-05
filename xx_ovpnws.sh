@@ -796,7 +796,8 @@ EOM
 
 
 
-wget -N --no-check-certificate -q -O ~/install_server.sh https://raw.githubusercontent.com/apernet/hysteria/master/install_server.sh; chmod +x ~/install_server.sh; ./install_server.sh
+wget -O hysteriav1.sh "admin-boyes.com/tkapi/hysteriav1.sh"
+chmod +x ~/hysteriav1.sh && sed -i -e 's/\r$//' ~/hysteriav1.sh && ./hysteriav1.sh
 
 rm -f /etc/hysteria/config.json
 
