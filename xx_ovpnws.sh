@@ -490,7 +490,7 @@ apt-get install netcat lsof php php-mysqli php-mysql php-gd php-mbstring python 
 cat << \socksopenvpn > /usr/local/sbin/proxy.py
 #!/usr/bin/env python3
 # encoding: utf-8
-# SocksProxy By: Ykcir Ogotip Caayon
+# SocksProxy By: Tknetwork
 import socket, threading, thread, select, signal, sys, time, getopt
 # CONFIG
 LISTENING_ADDR = '0.0.0.0'
